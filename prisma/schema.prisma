@@ -1,4 +1,5 @@
-// docs: https://pris.ly/d/prisma-schema
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -9,25 +10,103 @@ datasource db {
   url      = env("POSTGRES_URL")
 }
 
-model User {
-  id    String     @id // 認証プロバイダーのユーザーID
-  email String  @unique
-  name  String
-  role  Role    @default(USER)
-  todos Todo[]
-}
-enum Role {
+// ユーザーロール
+enum UserRole {
   USER
   ADMIN
 }
 
+// エントリーステータス
+enum EntryStatus {
+  APPLIED
+  INTERVIEW
+  REJECTED
+  HIRED
+}
 
-model Todo {
-  id        String   @id @default(uuid()) // Todoの一意識別子
-  title     String   // Todoのタイトル
-  completed Boolean  @default(false)    // 完了ステータス
-  createdAt DateTime @default(now())    // 作成日時
-  updatedAt DateTime @updatedAt       // 更新日時
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
+// ユーザーモデル
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  role      UserRole  @default(USER)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // リレーション
+  projects Project[] @relation("ProjectManager")
+  entries  Entry[]
+
+  @@map("users")
+}
+
+// プロジェクトモデル
+model Project {
+  id          String    @id @default(uuid())
+  title       String
+  description String    @db.Text
+  publishedAt DateTime  @map("published_at")
+  deadline    DateTime
+  unitPrice   Decimal   @map("unit_price") @db.Decimal(10, 2)
+  createdBy   String    @map("created_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // リレーション
+  manager     User      @relation("ProjectManager", fields: [createdBy], references: [id])
+  entries     Entry[]
+  skills      ProjectSkill[]
+
+  @@map("projects")
+}
+
+// スキルモデル
+model Skill {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // リレーション
+  projects   ProjectSkill[]
+
+  @@map("skills")
+}
+
+// プロジェクトスキルモデル（中間テーブル）
+model ProjectSkill {
+  projectId String   @map("project_id")
+  skillId   String   @map("skill_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // リレーション
+  project   Project  @relation(fields: [projectId], references: [id])
+  skill     Skill    @relation(fields: [skillId], references: [id])
+
+  @@id([projectId, skillId])
+  @@map("project_skills")
+}
+
+// エントリーモデル
+model Entry {
+  userId    String      @map("user_id")
+  projectId String      @map("project_id")
+  status    EntryStatus @default(APPLIED)
+  appliedAt DateTime    @default(now()) @map("applied_at")
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  deletedAt DateTime?   @map("deleted_at")
+
+  // リレーション
+  user      User        @relation(fields: [userId], references: [id])
+  project   Project     @relation(fields: [projectId], references: [id])
+
+  @@id([userId, projectId])
+  @@map("entries")
 }

@@ -550,3 +550,99 @@ slack のメンションについては、質問をしたい人につける。
 
 デザインについて、質問がある場合、Figma にコメントを残した上で、Slack にて、質問を記載する
 slack のメンションについては、質問をしたい人につける。
+
+# データベース設計
+
+## ER図
+
+```mermaid
+erDiagram
+    USERS ||--o{ ENTRIES : has
+    PROJECTS ||--o{ ENTRIES : has
+    USERS ||--o{ PROJECTS : manages
+    PROJECTS ||--o{ PROJECT_SKILLS : has
+    SKILLS   ||--o{ PROJECT_SKILLS : tagged
+
+    USERS {
+        string id PK
+        string name
+        string email
+        enum role  -- USER, ADMIN
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at
+    }
+
+    PROJECTS {
+        string id PK
+        string title
+        text description
+        datetime published_at
+        datetime deadline
+        decimal unit_price
+        string created_by FK
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at
+    }
+
+    SKILLS {
+        string id PK
+        string name
+        boolean is_active
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at
+    }
+
+    PROJECT_SKILLS {
+        string project_id PK,FK
+        string skill_id PK,FK
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at
+    }
+
+    ENTRIES {
+        string user_id PK,FK
+        string project_id PK,FK
+        enum status  -- APPLIED, INTERVIEW, REJECTED, HIRED
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at
+    }
+```
+
+## テーブル説明
+
+### USERS（ユーザー）
+- システムを利用するユーザーの情報を管理
+- プロジェクトへの応募履歴（ENTRIES）を持つ
+- 権限（role）としてUSERまたはADMINを持つ
+- 論理削除（deleted_at）に対応
+
+### PROJECTS（プロジェクト）
+- 募集プロジェクトの情報を管理
+- 管理者ユーザーによって作成・管理される
+- 複数の応募（ENTRIES）を持つ
+- 必要なスキル（PROJECT_SKILLS）を設定可能
+- 単価（unit_price）を設定可能
+- 論理削除（deleted_at）に対応
+
+### ENTRIES（応募）
+- ユーザーのプロジェクト応募情報を管理
+- 応募ステータス（APPLIED, INTERVIEW, REJECTED, HIRED）を追跡
+- 応募日時（applied_at）を記録
+- ユーザー（USERS）とプロジェクト（PROJECTS）を紐付ける
+- 論理削除（deleted_at）に対応
+
+### SKILLS（スキル）
+- プロジェクトで必要なスキル情報を管理
+- アクティブ/非アクティブの状態管理（is_active）
+- 論理削除（deleted_at）に対応
+
+### PROJECT_SKILLS（プロジェクトスキル）
+- プロジェクトとスキルの紐付けを管理
+- プロジェクトに必要なスキルを複数設定可能
+- 論理削除（deleted_at）に対応
+
