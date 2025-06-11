@@ -567,7 +567,7 @@ erDiagram
         string id PK
         string name
         string email
-        enum role  -- USER, ADMIN
+        enum role
         datetime created_at
         datetime updated_at
         datetime deleted_at
@@ -606,7 +606,7 @@ erDiagram
     ENTRIES {
         string user_id PK,FK
         string project_id PK,FK
-        enum status  -- APPLIED, INTERVIEW, REJECTED, HIRED
+        enum status
         datetime created_at
         datetime updated_at
         datetime deleted_at
